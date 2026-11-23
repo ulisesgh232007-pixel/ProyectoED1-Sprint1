@@ -1,0 +1,10 @@
+{
+  "name": "proyecto-ed1",
+  "version": "1.0.0",
+  "description": "Proyecto ED1 - Gestión de estaciones de laboratorio (versión JavaScript)",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js"
+  }
+}

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proyecto ED1 — Estaciones de Laboratorio</title>
+<style>
+    :root {
+        --fondo: #090e1a;
+        --panel: #101a2e;
+        --panel2: #0d1526;
+        --borde: #1f2c47;
+        --texto: #e8edf7;
+        --muted: #7d8ca8;
+        --acento: #818cf8;
+        --verde: #34d399;
+        --rojo: #fb7185;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background:
+            radial-gradient(1000px 400px at 80% -10%, rgba(129,140,248,.08), transparent),
+            radial-gradient(800px 400px at 10% 110%, rgba(52,211,153,.05), transparent),
+            var(--fondo);
+        color: var(--texto);
+        min-height: 100vh;
+    }
+
+    /* ---------- Navbar ---------- */
+    nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 32px;
+        border-bottom: 1px solid var(--borde);
+        background: rgba(16,26,46,.7);
+        backdrop-filter: blur(8px);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+
+    nav .titulo { display: flex; align-items: baseline; gap: 12px; }
+    nav h1 { font-size: 1.2rem; letter-spacing: .02em; }
+    nav .sub { font-size: .78rem; color: var(--muted); }
+
+    .badge {
+        font-size: .75rem;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .badge::before {
+        content: "";
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .badge.ok { background: rgba(52,211,153,.12); color: var(--verde); border: 1px solid rgba(52,211,153,.35); }
+    .badge.err { background: rgba(251,113,133,.12); color: var(--rojo); border: 1px solid rgba(251,113,133,.35); }
+
+    main { max-width: 1360px; margin: 0 auto; padding: 26px 24px 60px; }
+
+    /* ---------- Cargando ---------- */
+    #cargando { text-align: center; padding: 90px 0; color: var(--muted); }
+
+    .spinner {
+        width: 44px; height: 44px;
+        margin: 0 auto 18px;
+        border: 4px solid var(--borde);
+        border-top-color: var(--acento);
+        border-radius: 50%;
+        animation: girar .8s linear infinite;
+    }
+
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /* ---------- KPIs ---------- */
+    .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    @media (max-width: 800px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi {
+        background: var(--panel);
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .kpi .punto {
+        width: 10px; height: 44px;
+        border-radius: 999px;
+        flex-shrink: 0;
+    }
+
+    .kpi .num { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+    .kpi .lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; margin-top: 4px; }
+
+    .kpi.a .punto { background: var(--acento); } .kpi.a .num { color: var(--acento); }
+    .kpi.v .punto { background: var(--verde); } .kpi.v .num { color: var(--verde); }
+    .kpi.r .punto { background: var(--rojo); }  .kpi.r .num { color: var(--rojo); }
+    .kpi.n .punto { background: #fbbf24; }     .kpi.n .num { color: #fbbf24; }
+
+    /* ---------- Layout principal ---------- */
+    .layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+
+    @media (max-width: 950px) {
+        .layout { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+        background: var(--panel);
+        border: 1px solid var(--borde);
+        border-radius: 16px;
+        padding: 22px;
+    }
+
+    .panel h2 { font-size: 1rem; margin-bottom: 16px; }
+
+    /* ---------- Sidebar de operaciones ---------- */
+    .tabs {
+        display: flex;
+        gap: 4px;
+        background: var(--panel2);
+        border: 1px solid var(--borde);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 20px;
+    }
+
+    .tab {
+        flex: 1;
+        width: auto;
+        padding: 8px 4px;
+        background: transparent;
+        border-radius: 7px;
+        color: var(--muted);
+        font-size: .76rem;
+        font-weight: 600;
+    }
+
+    .tab:hover { filter: none; color: var(--texto); }
+
+    .tab.activo {
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #fff;
+    }
+
+    .campo { margin-bottom: 4px; }
+
+    .campo label {
+        display: block;
+        font-size: .68rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        margin-bottom: 9px;
+    }
+
+    .sep { border-top: 1px dashed var(--borde); margin: 18px 0; }
+
+    input, select {
+        width: 100%;
+        height: 42px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        background: #0a1120;
+        color: var(--texto);
+        font-size: .88rem;
+    }
+
+    input::placeholder { color: #4d5d7d; }
+    input:focus, select:focus { outline: 2px solid var(--acento); border-color: transparent; }
+
+    button {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        background: linear-gradient(120deg, #6366f1, #8b5cf6);
+        color: #fff;
+        font-size: .86rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: filter .12s, transform .1s;
+    }
+
+    button:hover { filter: brightness(1.18); }
+    button:active { transform: scale(.98); }
+
+    button.ghost {
+        background: transparent;
+        border: 1px solid rgba(251,113,133,.55);
+        color: var(--rojo);
+    }
+
+    button.ghost:hover {
+        background: rgba(251,113,133,.12);
+        filter: none;
+    }
+
+    /* ---------- Estaciones ---------- */
+    .est-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .barra-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: .78rem;
+        color: var(--muted);
+    }
+
+    .barra {
+        width: 160px; height: 8px;
+        background: var(--panel2);
+        border: 1px solid var(--borde);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .barra div {
+        height: 100%;
+        background: linear-gradient(90deg, var(--verde), var(--rojo));
+        border-radius: 999px;
+        transition: width .3s;
+    }
+
+    .grid-estaciones {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+    }
+
+    @media (max-width: 700px) {
+        .grid-estaciones { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .est {
+        border-radius: 14px;
+        padding: 14px 10px 12px;
+        text-align: center;
+        min-height: 92px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: rgba(52,211,153,.05);
+        border: 1.5px dashed rgba(52,211,153,.35);
+    }
+
+    .est .num {
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .12em;
+        color: var(--muted);
+    }
+
+    .est .st {
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .14em;
+        color: var(--verde);
+    }
+
+    .est .mat {
+        font-size: .88rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+
+    .est.ocupada {
+        background: linear-gradient(160deg, #be123c, #9f1239);
+        border: 1.5px solid rgba(251,113,133,.6);
+        box-shadow: 0 6px 18px rgba(190,18,60,.25);
+        cursor: pointer;
+        transition: transform .12s, box-shadow .12s;
+    }
+
+    .est.ocupada .num { color: rgba(255,255,255,.7); }
+    .est.ocupada .mat { color: #fff; }
+    .est.ocupada .st { color: #fecdd3; letter-spacing: .06em; font-weight: 500; font-size: .68rem; }
+
+    .est.ocupada:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(190,18,60,.35);
+    }
+
+    .hint { font-size: .75rem; color: var(--muted); margin-top: 16px; text-align: center; }
+
+    /* ---------- Resultados ---------- */
+    #resultados { margin-top: 20px; }
+
+    .tabla-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--borde); }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .84rem;
+        min-width: 760px;
+    }
+
+    th {
+        text-align: left;
+        padding: 11px 14px;
+        background: #16223c;
+        color: var(--muted);
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        white-space: nowrap;
+    }
+
+    td { padding: 11px 14px; border-top: 1px solid var(--borde); white-space: nowrap; }
+    tbody tr:hover { background: rgba(129,140,248,.06); }
+    td:first-child { color: var(--muted); font-size: .78rem; }
+
+    .vacio { color: var(--muted); font-size: .88rem; padding: 6px 0; }
+
+    /* ---------- Toasts ---------- */
+    #toasts {
+        position: fixed;
+        bottom: 22px;
+        right: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 10;
+    }
+
+    .toast {
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: .85rem;
+        font-weight: 600;
+        color: #fff;
+        box-shadow: 0 10px 26px rgba(0,0,0,.5);
+        animation: entrar .25s ease;
+    }
+
+    .toast.ok { background: #059669; }
+    .toast.err { background: #e11d48; }
+
+    @keyframes entrar {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: none; }
+    }
+</style>
+</head>
+<body>
+
+<nav>
+    <div class="titulo">
+        <h1>Proyecto ED1</h1>
+        <span class="sub">Gestión de estaciones de laboratorio</span>
+    </div>
+    <span class="badge ok" id="badge" hidden>Conectado</span>
+</nav>
+
+<main>
+    <div id="cargando">
+        <div class="spinner"></div>
+        Cargando inscripciones…
+    </div>
+
+    <div id="app" hidden>
+
+        <div class="kpis">
+            <div class="kpi a"><div class="punto"></div><div><div class="num" id="kpiTotal">0</div><div class="lbl">Inscripciones</div></div></div>
+            <div class="kpi v"><div class="punto"></div><div><div class="num" id="kpiLibres">0</div><div class="lbl">Estaciones libres</div></div></div>
+            <div class="kpi r"><div class="punto"></div><div><div class="num" id="kpiOcupadas">0</div><div class="lbl">Ocupadas</div></div></div>
+            <div class="kpi n"><div class="punto"></div><div><div class="num" id="kpiPracticas">0</div><div class="lbl">Prácticas</div></div></div>
+        </div>
+
+        <div class="layout">
+
+            <aside class="panel ops">
+                <div class="tabs">
+                    <button class="tab activo" onclick="irTab(0, this)">Consultas</button>
+                    <button class="tab" onclick="irTab(1, this)">Acceso</button>
+                    <button class="tab" onclick="irTab(2, this)">Estaciones</button>
+                </div>
+
+                <div class="tab-pane">
+                    <div class="campo">
+                        <label>Buscar matrícula</label>
+                        <input id="inBuscar" placeholder="Ej. 2526160001">
+                        <button onclick="buscarMatricula()">Buscar</button>
+                    </div>
+
+                    <div class="sep"></div>
+
+                    <div class="campo">
+                        <label>Consultar práctica</label>
+                        <select id="selPractica"></select>
+                        <button onclick="consultarPractica()">Ver inscritos</button>
+                    </div>
+                </div>
+
+                <div class="tab-pane" hidden>
+                    <div class="campo">
+                        <label>Validar inscripción</label>
+                        <input id="inValMat" placeholder="Matrícula">
+                        <select id="selValPrac"></select>
+                        <button onclick="validar()">Validar acceso</button>
+                    </div>
+                </div>
+
+                <div class="tab-pane" hidden>
+                    <div class="campo">
+                        <label>Asignar estación</label>
+                        <input id="inAsigMat" placeholder="Matrícula">
+                        <select id="selAsigPrac"></select>
+                        <button onclick="asignar()">Asignar</button>
+                    </div>
+
+                    <div class="sep"></div>
+
+                    <div class="campo">
+                        <label>Liberar estación</label>
+                        <input id="inLibMat" placeholder="Matrícula">
+                        <button class="ghost" onclick="liberar()">Liberar</button>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="panel">
+                <div class="est-head">
+                    <h2 style="margin:0">Estaciones del laboratorio</h2>
+                    <div class="barra-wrap">
+                        <span id="txtOcupacion">0 / 25</span>
+                        <div class="barra"><div id="barraOcupacion" style="width:0%"></div></div>
+                    </div>
+                </div>
+                <div class="grid-estaciones" id="grid"></div>
+                <p class="hint">Click en una estación ocupada para liberarla</p>
+            </section>
+        </div>
+
+        <section class="panel" id="resultados">
+            <h2>Resultados</h2>
+            <div id="lista"><p class="vacio">Sin resultados todavía.</p></div>
+        </section>
+    </div>
+</main>
+
+<div id="toasts"></div>
+
+<script>
+    const URL = "https://servicios-proyecto-ed.vercel.app/api/v1/inscritos_practicas";
+
+    let inscritos = [];
+    let estaciones = new Array(25).fill(null);
+
+    const $ = (id) => document.getElementById(id);
+
+    // ---------- Cargar datos de la API ----------
+    async function cargar() {
+        try {
+            const resp = await fetch(URL);
+            const json = await resp.json();
+            inscritos = json.datos;
+
+            // Prácticas únicas para los selectores
+            const practicas = [...new Set(inscritos.map(a => a.practica_id))].sort();
+            const opciones = practicas.map(p => `<option>${p}</option>`).join("");
+            $("selPractica").innerHTML = opciones;
+            $("selValPrac").innerHTML = opciones;
+            $("selAsigPrac").innerHTML = opciones;
+
+            $("cargando").hidden = true;
+            $("app").hidden = false;
+            $("badge").hidden = false;
+
+            pintarEstaciones();
+        } catch (e) {
+            $("cargando").innerHTML = "No se pudo conectar al servicio.<br><br>"
+                + "<button style='width:auto;padding:10px 24px' onclick='location.reload()'>Reintentar</button>";
+            const b = $("badge");
+            b.hidden = false;
+            b.textContent = "Sin conexión";
+            b.className = "badge err";
+        }
+    }
+
+    // ---------- Pintar estaciones y KPIs ----------
+    function pintarEstaciones() {
+        const ocupadas = estaciones.filter(e => e !== null).length;
+
+        $("kpiTotal").textContent = inscritos.length;
+        $("kpiPracticas").textContent = new Set(inscritos.map(a => a.practica_id)).size;
+        $("kpiOcupadas").textContent = ocupadas;
+        $("kpiLibres").textContent = estaciones.length - ocupadas;
+        $("txtOcupacion").textContent = ocupadas + " / " + estaciones.length;
+        $("barraOcupacion").style.width = (ocupadas / estaciones.length * 100) + "%";
+
+        $("grid").innerHTML = estaciones.map((m, i) => {
+            if (m === null) {
+                return `<div class="est">
+                    <span class="num">EST. ${String(i + 1).padStart(2, "0")}</span>
+                    <span class="st">LIBRE</span>
+                </div>`;
+            }
+            return `<div class="est ocupada" title="Click para liberar" onclick="liberarEstacion(${i})">
+                <span class="num">EST. ${String(i + 1).padStart(2, "0")}</span>
+                <span class="mat">${m}</span>
+                <span class="st">OCUPADA</span>
+            </div>`;
+        }).join("");
+    }
+
+    // ---------- Pestañas del sidebar ----------
+    function irTab(i, btn) {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("activo"));
+        btn.classList.add("activo");
+        document.querySelectorAll(".tab-pane").forEach((p, j) => p.hidden = j !== i);
+    }
+
+    // ---------- Consultas ----------
+    function estaInscrito(matricula, practica) {
+        return inscritos.some(a => a.matricula === matricula && a.practica_id === practica);
+    }
+
+    function buscarMatricula() {
+        const m = $("inBuscar").value.trim();
+        const encontrados = inscritos.filter(a => a.matricula === m);
+
+        if (encontrados.length === 0) {
+            mostrar(`<p class="vacio">No se encontró la matrícula ${m}.</p>`);
+            aviso("No se encontró la matrícula.", "err");
+        } else {
+            mostrar(tabla(encontrados));
+            aviso(encontrados.length + " inscripción(es) encontrada(s).", "ok");
+        }
+    }
+
+    function consultarPractica() {
+        const p = $("selPractica").value;
+        const alumnos = inscritos.filter(a => a.practica_id === p);
+
+        mostrar(`<p class="vacio">${alumnos.length} inscrito(s) en ${p}</p>` + tabla(alumnos));
+        aviso(alumnos.length + " inscrito(s) en " + p, "ok");
+    }
+
+    function validar() {
+        const m = $("inValMat").value.trim();
+        const p = $("selValPrac").value;
+        const ok = estaInscrito(m, p);
+
+        aviso(ok ? "Acceso permitido." : "Acceso rechazado.", ok ? "ok" : "err");
+    }
+
+    // ---------- Asignar / liberar ----------
+    function asignar() {
+        const m = $("inAsigMat").value.trim();
+        const p = $("selAsigPrac").value;
+
+        if (!estaInscrito(m, p)) {
+            return aviso("Acceso rechazado: el alumno no está inscrito.", "err");
+        }
+        if (estaciones.includes(m)) {
+            return aviso("El alumno ya tiene una estación asignada.", "err");
+        }
+
+        const pos = estaciones.indexOf(null);
+        if (pos === -1) {
+            return aviso("No hay estaciones disponibles.", "err");
+        }
+
+        estaciones[pos] = m;
+        pintarEstaciones();
+        aviso("Estación " + (pos + 1) + " asignada a " + m, "ok");
+    }
+
+    function liberar() {
+        liberarMatricula($("inLibMat").value.trim());
+    }
+
+    function liberarEstacion(i) {
+        liberarMatricula(estaciones[i]);
+    }
+
+    function liberarMatricula(m) {
+        const pos = estaciones.indexOf(m);
+
+        if (pos === -1) {
+            return aviso("El alumno no tiene una estación asignada.", "err");
+        }
+
+        estaciones[pos] = null;
+        pintarEstaciones();
+        aviso("Estación " + (pos + 1) + " liberada correctamente.", "ok");
+    }
+
+    // ---------- Utilidades ----------
+    function tabla(lista) {
+        const filas = lista.map(a => `<tr>
+            <td>${a.folio_inscripcion}</td>
+            <td>${a.matricula}</td>
+            <td>${a.nombre}</td>
+            <td>${a.grupo}</td>
+            <td>${a.practica_id}</td>
+            <td>${a.laboratorio}</td>
+            <td>${a.fecha}</td>
+        </tr>`).join("");
+
+        return `<div class="tabla-wrap"><table>
+            <thead><tr>
+                <th>Folio</th><th>Matrícula</th><th>Nombre</th>
+                <th>Grupo</th><th>Práctica</th><th>Lab</th><th>Fecha</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+        </table></div>`;
+    }
+
+    function mostrar(html) {
+        $("lista").innerHTML = html;
+        $("resultados").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function aviso(texto, tipo) {
+        const t = document.createElement("div");
+        t.className = "toast " + tipo;
+        t.textContent = texto;
+        $("toasts").appendChild(t);
+        setTimeout(() => t.remove(), 3200);
+    }
+
+    cargar();
+</script>
+
+</body>
+</html>
