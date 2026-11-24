@@ -4,6 +4,8 @@ import { ConsultaPracticas } from "./consultaPracticas.js";
 import { Estaciones } from "./estaciones.js";
 import { AsignacionEstaciones } from "./asignacionEstaciones.js";
 import { LiberacionEstaciones } from "./liberacionEstaciones.js";
+import { ResultadosPracticas } from "./resultadosPracticas.js";
+import { ServidorResultados } from "./servidorResultados.js";
 
 class EOFError extends Error {}
 
@@ -27,31 +29,124 @@ async function main() {
 
     const servicio = new ServicioInscritos();
 
-    let inscritos;
-
-    try {
-
-        inscritos = await servicio.cargarInscripciones();
-
-        console.log("Conexión realizada correctamente.");
-        console.log("Total de inscripciones: " + inscritos.size);
-
-    } catch (e) {
-
-        console.log("No se pudo conectar al servicio.");
-        console.log(e.message);
-
-        entrada.close();
-        return;
-    }
-
-    const consultas = new ConsultaPracticas(inscritos.values());
+    const inscritos = new Map();
 
     const estaciones = new Estaciones();
 
-    const asignaciones = new AsignacionEstaciones(estaciones, consultas);
-
     const liberaciones = new LiberacionEstaciones(estaciones);
+
+    const resultados = new ResultadosPracticas(inscritos);
+
+    const servidor = new ServidorResultados(resultados);
+
+    await servidor.iniciar();
+
+    let consultas = new ConsultaPracticas(inscritos.values());
+
+    let asignaciones = new AsignacionEstaciones(estaciones, consultas);
+
+    // HU-D13: si el servicio no responde, el programa avisa y no se
+    // detiene; la conexión se puede reintentar desde el menú.
+    const conectar = async () => {
+
+        try {
+
+            const nuevos = await servicio.cargarInscripciones();
+
+            inscritos.clear();
+
+            for (const [folio, alumno] of nuevos) {
+                inscritos.set(folio, alumno);
+            }
+
+            consultas = new ConsultaPracticas(inscritos.values());
+
+            asignaciones = new AsignacionEstaciones(estaciones, consultas);
+
+            console.log("Conexión realizada correctamente.");
+            console.log("Total de inscripciones: " + inscritos.size);
+
+            return true;
+
+        } catch (e) {
+
+            console.log("Aviso: no se pudo conectar al servicio.");
+            console.log(e.message);
+            console.log("El programa continúa sin datos; "
+                + "usa la opción 10 para reintentar.");
+
+            return false;
+        }
+    };
+
+    await conectar();
+
+    const registrarResultado = async () => {
+
+        if (inscritos.size === 0) {
+            console.log("No hay inscripciones cargadas.");
+            return;
+        }
+
+        const pendientes = resultados.pendientes();
+
+        console.log("\nInscripciones sin resultado: "
+            + pendientes.length + " de " + inscritos.size);
+
+        for (const alumno of pendientes) {
+            console.log(alumno.folio_inscripcion
+                + " | " + alumno.matricula
+                + " | " + alumno.nombre
+                + " | " + alumno.practica_id);
+        }
+
+        const folio = await leer("\nIngresa el folio_inscripcion: ");
+
+        const inscripcion = inscritos.get(folio);
+
+        if (!inscripcion) {
+            console.log("No existe una inscripción con ese folio.");
+            return;
+        }
+
+        if (resultados.obtener(folio)) {
+            console.log("Ese folio ya tiene resultado; se actualizará.");
+        }
+
+        const asistio = await leer("¿Asistió? (S/N): ");
+
+        let calificacion = 0;
+
+        if (asistio.trim().toUpperCase() === "S") {
+            calificacion = await leer("Calificación (0 a 10): ");
+        }
+
+        const adeudo = await leer("¿Adeudo de material? (S/N): ");
+
+        let monto = 0;
+
+        if (adeudo.trim().toUpperCase() === "S") {
+            monto = await leer("Monto del adeudo: ");
+        }
+
+        const respuesta = resultados.registrar(folio, {
+            asistio,
+            calificacion,
+            adeudo_material: adeudo,
+            monto_adeudo: monto,
+        });
+
+        if (!respuesta.ok) {
+            console.log(respuesta.mensaje);
+            return;
+        }
+
+        console.log(respuesta.actualizado
+            ? "Resultado actualizado."
+            : "Resultado registrado.");
+
+        console.log(respuesta.resultado.toString());
+    };
 
     let opcion;
 
@@ -67,7 +162,10 @@ async function main() {
             console.log("5. Mostrar estaciones");
             console.log("6. Asignar estación");
             console.log("7. Liberar estación");
-            console.log("8. Salir");
+            console.log("8. Registrar resultado de práctica");
+            console.log("9. Mostrar resultados registrados");
+            console.log("10. Reintentar conexión con el servicio");
+            console.log("11. Salir");
 
             const respuesta = await leer("Selecciona una opción: ");
             opcion = Number.parseInt(respuesta, 10);
@@ -151,6 +249,24 @@ async function main() {
 
                 case 8:
 
+                    await registrarResultado();
+
+                    break;
+
+                case 9:
+
+                    resultados.mostrarResultados();
+
+                    break;
+
+                case 10:
+
+                    await conectar();
+
+                    break;
+
+                case 11:
+
                     console.log("Programa finalizado.");
 
                     break;
@@ -160,16 +276,19 @@ async function main() {
                     console.log("Opción no válida.");
             }
 
-        } while (opcion !== 8);
+        } while (opcion !== 11);
 
     } catch (e) {
 
         if (!(e instanceof EOFError)) {
             throw e;
         }
-    }
 
-    entrada.close();
+    } finally {
+
+        servidor.detener();
+        entrada.close();
+    }
 }
 
 main();

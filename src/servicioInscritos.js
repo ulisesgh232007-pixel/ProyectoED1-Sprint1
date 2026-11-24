@@ -1,12 +1,16 @@
 import { Inscripcion } from "./inscripcion.js";
+import { BASE_URL } from "./config.js";
 
-const URL = "https://servicios-proyecto-ed.vercel.app/api/v1/inscritos_practicas";
+const RECURSO_INSCRITOS = "inscritos_practicas";
 
 export class ServicioInscritos {
 
     async cargarInscripciones() {
 
-        const respuesta = await fetch(URL);
+        const respuesta = await fetch(
+            `${BASE_URL}/${RECURSO_INSCRITOS}`,
+            { signal: AbortSignal.timeout(10000) }
+        );
 
         if (!respuesta.ok) {
             throw new Error("Error del servicio: " + respuesta.status);
