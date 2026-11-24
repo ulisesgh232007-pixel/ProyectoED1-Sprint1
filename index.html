@@ -3,27 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Proyecto ED1 — Estaciones de Laboratorio</title>
+<title>Proyecto ED1 — Laboratorios y talleres</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚗️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
     :root {
-        --fondo: #090e1a;
-        --panel: #101a2e;
-        --panel2: #0d1526;
-        --borde: #1f2c47;
-        --texto: #e8edf7;
-        --muted: #7d8ca8;
+        --fondo: #0a0f1d;
+        --panel: #111a2e;
+        --panel2: #0c1425;
+        --borde: #22314f;
+        --texto: #e9eef8;
+        --muted: #8494b0;
         --acento: #818cf8;
         --verde: #34d399;
         --rojo: #fb7185;
+        --ambar: #fbbf24;
+        --cian: #22d3ee;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-        font-family: "Segoe UI", system-ui, sans-serif;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
         background:
-            radial-gradient(1000px 400px at 80% -10%, rgba(129,140,248,.08), transparent),
-            radial-gradient(800px 400px at 10% 110%, rgba(52,211,153,.05), transparent),
+            radial-gradient(1100px 500px at 85% -10%, rgba(129,140,248,.10), transparent 60%),
+            radial-gradient(900px 500px at 5% 110%, rgba(52,211,153,.06), transparent 60%),
             var(--fondo);
         color: var(--texto);
         min-height: 100vh;
@@ -34,21 +40,48 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px 32px;
+        gap: 16px;
+        padding: 14px 32px;
         border-bottom: 1px solid var(--borde);
-        background: rgba(16,26,46,.7);
-        backdrop-filter: blur(8px);
+        background: rgba(12,20,37,.75);
+        backdrop-filter: blur(10px);
         position: sticky;
         top: 0;
         z-index: 5;
     }
 
-    nav .titulo { display: flex; align-items: baseline; gap: 12px; }
-    nav h1 { font-size: 1.2rem; letter-spacing: .02em; }
-    nav .sub { font-size: .78rem; color: var(--muted); }
+    .marca { display: flex; align-items: center; gap: 13px; min-width: 0; }
+
+    .logo {
+        width: 40px; height: 40px;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        font-size: 1.15rem;
+        border-radius: 11px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        box-shadow: 0 6px 16px rgba(99,102,241,.35);
+    }
+
+    .marca h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: .01em; }
+    .marca .sub { font-size: .74rem; color: var(--muted); }
+
+    .nav-der { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    .chip {
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        padding: 6px 13px;
+        border-radius: 999px;
+        color: var(--muted);
+        border: 1px solid var(--borde);
+        background: var(--panel2);
+    }
 
     .badge {
-        font-size: .75rem;
+        font-size: .74rem;
         font-weight: 600;
         padding: 6px 14px;
         border-radius: 999px;
@@ -67,7 +100,7 @@
     .badge.ok { background: rgba(52,211,153,.12); color: var(--verde); border: 1px solid rgba(52,211,153,.35); }
     .badge.err { background: rgba(251,113,133,.12); color: var(--rojo); border: 1px solid rgba(251,113,133,.35); }
 
-    main { max-width: 1360px; margin: 0 auto; padding: 26px 24px 60px; }
+    main { max-width: 1360px; margin: 0 auto; padding: 26px 24px 50px; }
 
     /* ---------- Cargando ---------- */
     #cargando { text-align: center; padding: 90px 0; color: var(--muted); }
@@ -86,36 +119,35 @@
     /* ---------- KPIs ---------- */
     .kpis {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
         gap: 14px;
         margin-bottom: 22px;
     }
-
-    @media (max-width: 800px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
 
     .kpi {
         background: var(--panel);
         border: 1px solid var(--borde);
         border-radius: 14px;
-        padding: 18px 20px;
+        padding: 16px 20px;
         display: flex;
         align-items: center;
         gap: 14px;
     }
 
     .kpi .punto {
-        width: 10px; height: 44px;
+        width: 9px; height: 42px;
         border-radius: 999px;
         flex-shrink: 0;
     }
 
-    .kpi .num { font-size: 1.9rem; font-weight: 700; line-height: 1; }
-    .kpi .lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; margin-top: 4px; }
+    .kpi .num { font-size: 1.85rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+    .kpi .lbl { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .09em; margin-top: 5px; }
 
     .kpi.a .punto { background: var(--acento); } .kpi.a .num { color: var(--acento); }
     .kpi.v .punto { background: var(--verde); } .kpi.v .num { color: var(--verde); }
     .kpi.r .punto { background: var(--rojo); }  .kpi.r .num { color: var(--rojo); }
-    .kpi.n .punto { background: #fbbf24; }     .kpi.n .num { color: #fbbf24; }
+    .kpi.n .punto { background: var(--ambar); } .kpi.n .num { color: var(--ambar); }
+    .kpi.c .punto { background: var(--cian); }  .kpi.c .num { color: var(--cian); }
 
     /* ---------- Layout principal ---------- */
     .layout {
@@ -134,11 +166,12 @@
         border: 1px solid var(--borde);
         border-radius: 16px;
         padding: 22px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
 
-    .panel h2 { font-size: 1rem; margin-bottom: 16px; }
+    .panel h2 { font-size: .98rem; font-weight: 700; margin-bottom: 16px; }
 
-    /* ---------- Sidebar de operaciones ---------- */
+    /* ---------- Pestañas de operaciones ---------- */
     .tabs {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -152,12 +185,13 @@
 
     .tab {
         width: auto;
-        padding: 8px 4px;
+        padding: 9px 4px;
         background: transparent;
         border-radius: 7px;
         color: var(--muted);
         font-size: .76rem;
         font-weight: 600;
+        letter-spacing: .02em;
     }
 
     .tab:hover { filter: none; color: var(--texto); }
@@ -165,6 +199,7 @@
     .tab.activo {
         background: linear-gradient(120deg, #6366f1, #8b5cf6);
         color: #fff;
+        box-shadow: 0 4px 12px rgba(99,102,241,.35);
     }
 
     .campo { margin-bottom: 4px; }
@@ -176,9 +211,12 @@
         text-transform: uppercase;
         letter-spacing: .12em;
         margin-bottom: 9px;
+        font-weight: 600;
     }
 
     .sep { border-top: 1px dashed var(--borde); margin: 18px 0; }
+
+    .nota { font-size: .72rem; color: var(--muted); margin: -2px 0 10px; }
 
     input, select {
         width: 100%;
@@ -189,44 +227,56 @@
         border-radius: 8px;
         background: #0a1120;
         color: var(--texto);
-        font-size: .88rem;
+        font-size: .87rem;
+        font-family: inherit;
+        transition: border-color .15s, box-shadow .15s;
     }
 
     input::placeholder { color: #4d5d7d; }
-    input:focus, select:focus { outline: 2px solid var(--acento); border-color: transparent; }
+    input:focus, select:focus { outline: none; border-color: var(--acento); box-shadow: 0 0 0 3px rgba(129,140,248,.18); }
 
     button {
         width: 100%;
-        padding: 10px;
+        padding: 11px;
         border: none;
         border-radius: 8px;
         background: linear-gradient(120deg, #6366f1, #8b5cf6);
         color: #fff;
         font-size: .86rem;
         font-weight: 600;
+        font-family: inherit;
         cursor: pointer;
-        transition: filter .12s, transform .1s;
+        transition: filter .12s, transform .1s, box-shadow .12s;
+        box-shadow: 0 4px 14px rgba(99,102,241,.25);
     }
 
-    button:hover { filter: brightness(1.18); }
+    button:hover { filter: brightness(1.15); }
     button:active { transform: scale(.98); }
+
+    button.sec {
+        background: transparent;
+        border: 1px solid rgba(129,140,248,.5);
+        color: var(--acento);
+        box-shadow: none;
+    }
+
+    button.sec:hover { background: rgba(129,140,248,.1); filter: none; }
 
     button.ghost {
         background: transparent;
         border: 1px solid rgba(251,113,133,.55);
         color: var(--rojo);
+        box-shadow: none;
     }
 
-    button.ghost:hover {
-        background: rgba(251,113,133,.12);
-        filter: none;
-    }
+    button.ghost:hover { background: rgba(251,113,133,.12); filter: none; }
 
     /* ---------- Estaciones ---------- */
     .est-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 14px;
         margin-bottom: 16px;
     }
 
@@ -236,6 +286,7 @@
         gap: 10px;
         font-size: .78rem;
         color: var(--muted);
+        font-variant-numeric: tabular-nums;
     }
 
     .barra {
@@ -319,7 +370,13 @@
     /* ---------- Resultados ---------- */
     #resultados { margin-top: 20px; }
 
+    .res-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .res-head h2 { margin: 0; }
+    .res-head .chip { text-transform: none; letter-spacing: .02em; font-size: .72rem; }
+
     .tabla-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--borde); }
+    .tabla-wrap::-webkit-scrollbar { height: 8px; }
+    .tabla-wrap::-webkit-scrollbar-thumb { background: var(--borde); border-radius: 999px; }
 
     table {
         width: 100%;
@@ -334,16 +391,41 @@
         background: #16223c;
         color: var(--muted);
         font-size: .68rem;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .1em;
         white-space: nowrap;
     }
 
-    td { padding: 11px 14px; border-top: 1px solid var(--borde); white-space: nowrap; }
-    tbody tr:hover { background: rgba(129,140,248,.06); }
+    td { padding: 10px 14px; border-top: 1px solid var(--borde); white-space: nowrap; }
+    tbody tr:nth-child(even) { background: rgba(129,140,248,.03); }
+    tbody tr:hover { background: rgba(129,140,248,.07); }
     td:first-child { color: var(--muted); font-size: .78rem; }
 
+    .pill {
+        display: inline-block;
+        min-width: 26px;
+        text-align: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .pill.ok { background: rgba(52,211,153,.14); color: var(--verde); border: 1px solid rgba(52,211,153,.4); }
+    .pill.err { background: rgba(251,113,133,.14); color: var(--rojo); border: 1px solid rgba(251,113,133,.4); }
+
     .vacio { color: var(--muted); font-size: .88rem; padding: 6px 0; }
+
+    /* ---------- Footer ---------- */
+    footer {
+        text-align: center;
+        padding: 22px;
+        border-top: 1px solid var(--borde);
+        color: var(--muted);
+        font-size: .74rem;
+        letter-spacing: .03em;
+    }
 
     /* ---------- Toasts ---------- */
     #toasts {
@@ -378,11 +460,17 @@
 <body>
 
 <nav>
-    <div class="titulo">
-        <h1>Proyecto ED1</h1>
-        <span class="sub">Gestión de estaciones de laboratorio</span>
+    <div class="marca">
+        <div class="logo">⚗️</div>
+        <div>
+            <h1>Laboratorios y talleres</h1>
+            <span class="sub">Equipo 1 · Prácticas y estaciones — 4DSM2</span>
+        </div>
     </div>
-    <span class="badge ok" id="badge" hidden>Conectado</span>
+    <div class="nav-der">
+        <span class="chip">Sprint 2</span>
+        <span class="badge ok" id="badge" hidden>Conectado</span>
+    </div>
 </nav>
 
 <main>
@@ -398,6 +486,7 @@
             <div class="kpi v"><div class="punto"></div><div><div class="num" id="kpiLibres">0</div><div class="lbl">Estaciones libres</div></div></div>
             <div class="kpi r"><div class="punto"></div><div><div class="num" id="kpiOcupadas">0</div><div class="lbl">Ocupadas</div></div></div>
             <div class="kpi n"><div class="punto"></div><div><div class="num" id="kpiPracticas">0</div><div class="lbl">Prácticas</div></div></div>
+            <div class="kpi c"><div class="punto"></div><div><div class="num" id="kpiResultados">0</div><div class="lbl">Resultados</div></div></div>
         </div>
 
         <div class="layout">
@@ -457,6 +546,7 @@
                         <label>Registrar resultado</label>
                         <select id="selResPrac" onchange="llenarFolios()"></select>
                         <select id="selResFolio" onchange="prefillResultado()"></select>
+                        <p class="nota">✓ = folio con resultado registrado</p>
                         <select id="selAsistio" onchange="toggleCampos()">
                             <option value="S">Asistió: S</option>
                             <option value="N">Asistió: N</option>
@@ -472,7 +562,7 @@
 
                     <div class="sep"></div>
 
-                    <button onclick="verResultados()">Ver resultados</button>
+                    <button class="sec" onclick="verResultados()">Ver resultados</button>
                 </div>
             </aside>
 
@@ -490,11 +580,18 @@
         </div>
 
         <section class="panel" id="resultados">
-            <h2>Resultados</h2>
+            <div class="res-head">
+                <h2>Resultados</h2>
+                <span class="chip" id="resumen">Sin registros</span>
+            </div>
             <div id="lista"><p class="vacio">Sin resultados todavía.</p></div>
         </section>
     </div>
 </main>
+
+<footer>
+    Proyecto D · Estructura de Datos — Equipo 1 · Prácticas y estaciones · 4DSM2 · Sprint 2
+</footer>
 
 <div id="toasts"></div>
 
@@ -549,6 +646,7 @@
         $("kpiPracticas").textContent = new Set(inscritos.map(a => a.practica_id)).size;
         $("kpiOcupadas").textContent = ocupadas;
         $("kpiLibres").textContent = estaciones.length - ocupadas;
+        $("kpiResultados").textContent = resultados.size;
         $("txtOcupacion").textContent = ocupadas + " / " + estaciones.length;
         $("barraOcupacion").style.width = (ocupadas / estaciones.length * 100) + "%";
 
@@ -587,7 +685,7 @@
             mostrar(`<p class="vacio">No se encontró la matrícula ${m}.</p>`);
             aviso("No se encontró la matrícula.", "err");
         } else {
-            mostrar(tabla(encontrados));
+            mostrar(resumen(`${encontrados.length} inscripción(es) encontrada(s)`) + tabla(encontrados));
             aviso(encontrados.length + " inscripción(es) encontrada(s).", "ok");
         }
     }
@@ -596,7 +694,7 @@
         const p = $("selPractica").value;
         const alumnos = inscritos.filter(a => a.practica_id === p);
 
-        mostrar(`<p class="vacio">${alumnos.length} inscrito(s) en ${p}</p>` + tabla(alumnos));
+        mostrar(resumen(`${alumnos.length} inscrito(s) en ${p}`) + tabla(alumnos));
         aviso(alumnos.length + " inscrito(s) en " + p, "ok");
     }
 
@@ -718,6 +816,7 @@
         });
 
         llenarFolios();
+        pintarEstaciones();
         aviso(actualizado ? "Resultado actualizado." : "Resultado registrado.", "ok");
         verResultados();
     }
@@ -726,12 +825,14 @@
         const lista = [...resultados.values()];
 
         if (lista.length === 0) {
-            return mostrar(`<p class="vacio">Sin resultados registrados.</p>`);
+            mostrar(`<p class="vacio">Sin resultados registrados.</p>`);
+            resumen("Sin registros");
+            return;
         }
 
-        mostrar(`<p class="vacio">${lista.length} resultado(s) · `
-            + (inscritos.length - lista.length) + " pendiente(s)</p>"
-            + tablaResultados(lista));
+        mostrar(tablaResultados(lista));
+        resumen(lista.length + " registrado(s) · "
+            + (inscritos.length - lista.length) + " pendiente(s)");
     }
 
     function tablaResultados(lista) {
@@ -739,9 +840,9 @@
             <td>${r.folio_inscripcion}</td>
             <td>${r.matricula}</td>
             <td>${r.practica_id}</td>
-            <td>${r.asistio}</td>
+            <td><span class="pill ${r.asistio === "S" ? "ok" : "err"}">${r.asistio}</span></td>
             <td>${r.calificacion}</td>
-            <td>${r.adeudo_material}</td>
+            <td><span class="pill ${r.adeudo_material === "S" ? "err" : "ok"}">${r.adeudo_material}</span></td>
             <td>${r.monto_adeudo}</td>
         </tr>`).join("");
 
@@ -755,6 +856,11 @@
     }
 
     // ---------- Utilidades ----------
+    function resumen(texto) {
+        $("resumen").textContent = texto;
+        return "";
+    }
+
     function tabla(lista) {
         const filas = lista.map(a => `<tr>
             <td>${a.folio_inscripcion}</td>

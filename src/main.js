@@ -154,7 +154,7 @@ async function main() {
 
         do {
 
-            console.log("\n===== PROYECTO ED1 =====");
+            console.log("\n── PROYECTO ED1 · Equipo 1 · Prácticas y estaciones ──");
             console.log("1. Mostrar total de inscripciones");
             console.log("2. Buscar matrícula");
             console.log("3. Consultar práctica");
