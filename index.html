@@ -407,6 +407,7 @@
                     <button class="tab activo" onclick="irTab(0, this)">Consultas</button>
                     <button class="tab" onclick="irTab(1, this)">Acceso</button>
                     <button class="tab" onclick="irTab(2, this)">Estaciones</button>
+                    <button class="tab" onclick="irTab(3, this)">Resultados</button>
                 </div>
 
                 <div class="tab-pane">
@@ -450,6 +451,29 @@
                         <button class="ghost" onclick="liberar()">Liberar</button>
                     </div>
                 </div>
+
+                <div class="tab-pane" hidden>
+                    <div class="campo">
+                        <label>Registrar resultado</label>
+                        <select id="selResPrac" onchange="llenarFolios()"></select>
+                        <select id="selResFolio" onchange="prefillResultado()"></select>
+                        <select id="selAsistio" onchange="toggleCampos()">
+                            <option value="S">Asistió: S</option>
+                            <option value="N">Asistió: N</option>
+                        </select>
+                        <input id="inCalif" type="number" min="0" max="10" step="0.5" placeholder="Calificación (0 a 10)">
+                        <select id="selAdeudo" onchange="toggleCampos()">
+                            <option value="N">Adeudo material: N</option>
+                            <option value="S">Adeudo material: S</option>
+                        </select>
+                        <input id="inMonto" type="number" min="0" step="0.01" placeholder="Monto del adeudo" hidden>
+                        <button onclick="registrarResultado()">Registrar</button>
+                    </div>
+
+                    <div class="sep"></div>
+
+                    <button onclick="verResultados()">Ver resultados</button>
+                </div>
             </aside>
 
             <section class="panel">
@@ -475,17 +499,21 @@
 <div id="toasts"></div>
 
 <script>
-    const URL = "https://servicios-proyecto-ed.vercel.app/api/v1/inscritos_practicas";
+    // HU-D13: la URL base está en un solo lugar; cambiando solo este
+    // valor la página lee los inscritos desde otra URL.
+    const BASE_URL = "https://servicios-proyecto-ed.vercel.app/api/v1";
 
     let inscritos = [];
     let estaciones = new Array(25).fill(null);
+    // HU-D03: diccionario folio_inscripcion -> resultado (uno por inscripción)
+    let resultados = new Map();
 
     const $ = (id) => document.getElementById(id);
 
     // ---------- Cargar datos de la API ----------
     async function cargar() {
         try {
-            const resp = await fetch(URL);
+            const resp = await fetch(`${BASE_URL}/inscritos_practicas`);
             const json = await resp.json();
             inscritos = json.datos;
 
@@ -495,6 +523,8 @@
             $("selPractica").innerHTML = opciones;
             $("selValPrac").innerHTML = opciones;
             $("selAsigPrac").innerHTML = opciones;
+            $("selResPrac").innerHTML = opciones;
+            llenarFolios();
 
             $("cargando").hidden = true;
             $("app").hidden = false;
@@ -618,6 +648,110 @@
         estaciones[pos] = null;
         pintarEstaciones();
         aviso("Estación " + (pos + 1) + " liberada correctamente.", "ok");
+    }
+
+    // ---------- Resultados (HU-D03) ----------
+    function llenarFolios() {
+        const p = $("selResPrac").value;
+        const ops = inscritos
+            .filter(a => a.practica_id === p)
+            .map(a => {
+                const marca = resultados.has(a.folio_inscripcion) ? " ✓" : "";
+                return `<option value="${a.folio_inscripcion}">${a.folio_inscripcion} · ${a.matricula}${marca}</option>`;
+            });
+        $("selResFolio").innerHTML = ops.join("");
+        prefillResultado();
+    }
+
+    function prefillResultado() {
+        const r = resultados.get($("selResFolio").value);
+        $("selAsistio").value = r ? r.asistio : "S";
+        $("inCalif").value = r && r.asistio === "S" ? r.calificacion : "";
+        $("selAdeudo").value = r ? r.adeudo_material : "N";
+        $("inMonto").value = r && r.adeudo_material === "S" ? r.monto_adeudo : "";
+        toggleCampos();
+    }
+
+    function toggleCampos() {
+        $("inCalif").hidden = $("selAsistio").value !== "S";
+        $("inMonto").hidden = $("selAdeudo").value !== "S";
+    }
+
+    function registrarResultado() {
+        const folio = $("selResFolio").value;
+        const ins = inscritos.find(a => a.folio_inscripcion === folio);
+
+        if (!ins) {
+            return aviso("No existe una inscripción con ese folio.", "err");
+        }
+
+        const asistio = $("selAsistio").value;
+        const adeudo = $("selAdeudo").value;
+
+        let calificacion = 0;
+        if (asistio === "S") {
+            calificacion = Number($("inCalif").value);
+            if ($("inCalif").value === "" || Number.isNaN(calificacion)
+                    || calificacion < 0 || calificacion > 10) {
+                return aviso("La calificación debe ser un número de 0 a 10.", "err");
+            }
+        }
+
+        let monto = 0;
+        if (adeudo === "S") {
+            monto = Number($("inMonto").value);
+            if ($("inMonto").value === "" || Number.isNaN(monto) || monto < 0) {
+                return aviso("El monto del adeudo debe ser un número mayor o igual a 0.", "err");
+            }
+        }
+
+        const actualizado = resultados.has(folio);
+
+        resultados.set(folio, {
+            folio_inscripcion: folio,
+            matricula: ins.matricula,
+            practica_id: ins.practica_id,
+            asistio,
+            calificacion,
+            adeudo_material: adeudo,
+            monto_adeudo: monto
+        });
+
+        llenarFolios();
+        aviso(actualizado ? "Resultado actualizado." : "Resultado registrado.", "ok");
+        verResultados();
+    }
+
+    function verResultados() {
+        const lista = [...resultados.values()];
+
+        if (lista.length === 0) {
+            return mostrar(`<p class="vacio">Sin resultados registrados.</p>`);
+        }
+
+        mostrar(`<p class="vacio">${lista.length} resultado(s) · `
+            + (inscritos.length - lista.length) + " pendiente(s)</p>"
+            + tablaResultados(lista));
+    }
+
+    function tablaResultados(lista) {
+        const filas = lista.map(r => `<tr>
+            <td>${r.folio_inscripcion}</td>
+            <td>${r.matricula}</td>
+            <td>${r.practica_id}</td>
+            <td>${r.asistio}</td>
+            <td>${r.calificacion}</td>
+            <td>${r.adeudo_material}</td>
+            <td>${r.monto_adeudo}</td>
+        </tr>`).join("");
+
+        return `<div class="tabla-wrap"><table>
+            <thead><tr>
+                <th>Folio</th><th>Matrícula</th><th>Práctica</th>
+                <th>Asistió</th><th>Calif</th><th>Adeudo</th><th>Monto</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+        </table></div>`;
     }
 
     // ---------- Utilidades ----------
