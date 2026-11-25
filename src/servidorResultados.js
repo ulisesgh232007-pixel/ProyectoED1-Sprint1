@@ -4,9 +4,7 @@ import { PUERTO_API } from "./config.js";
 const RECURSO = "resultados_practicas";
 const RUTA = `/api/v1/${RECURSO}`;
 
-// Publica los resultados en http://localhost:8080/api/v1/... con el
-// mismo formato que los servicios de prueba: lista con envoltura
-// {recurso, generado, total, datos}, registro por su clave y 404.
+
 export class ServidorResultados {
 
     constructor(resultados) {
